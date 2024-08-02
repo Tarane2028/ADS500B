@@ -1,0 +1,228 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyMxD+qtiAU9hcmM+/4xA17P",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/Tarane2028/ADS500B/blob/main/Open%20Laptop%20Camera%20with%20codes%20in%20Python\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 519
+        },
+        "id": "UPFxP5NHGQ7v",
+        "outputId": "46ced787-1d7b-4796-a061-2aa2b54869d8"
+      },
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ],
+            "application/javascript": [
+              "\n",
+              "  async function takePhoto(quality) {\n",
+              "  const div = document.createElement('div');\n",
+              "  const capture = document.createElement('button');\n",
+              "  capture.textContent = 'Capture';\n",
+              "  div.appendChild(capture);\n",
+              "  const video = document.createElement('video');\n",
+              "  video.style.display = 'block';\n",
+              "  const stream = await navigator.mediaDevices.getUserMedia({video: true});\n",
+              "  document.body.appendChild(div);\n",
+              "  div.appendChild(video);\n",
+              "  video.srcObject = stream;\n",
+              "  await video.play();\n",
+              "  // Resize the output to fit the video element.\n",
+              "  google.colab.output.setIframeHeight(document.documentElement.scrollHeight, true);\n",
+              "  // Wait for Capture to be clicked.\n",
+              "  await new Promise((resolve) => capture.onclick = resolve);\n",
+              "  const canvas = document.createElement('canvas');\n",
+              "  canvas.width = video.videoWidth;\n",
+              "  canvas.height = video.videoHeight;\n",
+              "  canvas.getContext('2d').drawImage(video, 0, 0);\n",
+              "  stream.getVideoTracks()[0].stop();\n",
+              "  div.remove();\n",
+              "  return canvas.toDataURL('image/jpeg', quality);\n",
+              "}\n"
+            ]
+          },
+          "metadata": {}
+        }
+      ],
+      "source": [
+        "from IPython.display import display, Javascript\n",
+        "from google.colab.output import eval_js\n",
+        "from base64 import b64decode\n",
+        "def take_photo(filename='photo.jpg', quality=0.8):\n",
+        " js = Javascript('''\n",
+        "  async function takePhoto(quality) {\n",
+        "  const div = document.createElement('div');\n",
+        "  const capture = document.createElement('button');\n",
+        "  capture.textContent = 'Capture';\n",
+        "  div.appendChild(capture);\n",
+        "  const video = document.createElement('video');\n",
+        "  video.style.display = 'block';\n",
+        "  const stream = await navigator.mediaDevices.getUserMedia({video: true});\n",
+        "  document.body.appendChild(div);\n",
+        "  div.appendChild(video);\n",
+        "  video.srcObject = stream;\n",
+        "  await video.play();\n",
+        "  // Resize the output to fit the video element.\n",
+        "  google.colab.output.setIframeHeight(document.documentElement.scrollHeight, true);\n",
+        "  // Wait for Capture to be clicked.\n",
+        "  await new Promise((resolve) => capture.onclick = resolve);\n",
+        "  const canvas = document.createElement('canvas');\n",
+        "  canvas.width = video.videoWidth;\n",
+        "  canvas.height = video.videoHeight;\n",
+        "  canvas.getContext('2d').drawImage(video, 0, 0);\n",
+        "  stream.getVideoTracks()[0].stop();\n",
+        "  div.remove();\n",
+        "  return canvas.toDataURL('image/jpeg', quality);\n",
+        "}\n",
+        "''')\n",
+        " display(js)\n",
+        " data = eval_js('takePhoto({})'.format(quality))\n",
+        " binary = b64decode(data.split(',')[1])\n",
+        " with open(filename, 'wb') as f:\n",
+        "  f.write(binary)\n",
+        " return filename\n",
+        "\n",
+        "from IPython.display import Image\n",
+        "try:\n",
+        " filename = take_photo()\n",
+        " print('Saved to {}'.format(filename))\n",
+        " # Show the image which was just taken.\n",
+        " display(Image(filename))\n",
+        "except Exception as err:\n",
+        " # Errors will be thrown if the user does not have a webcam or if they do not\n",
+        " # grant the page permission to access it.\n",
+        " print(str(err))"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import cv2\n",
+        "import imutils\n",
+        "import numpy as np\n",
+        "from google.colab.patches import cv2_imshow\n",
+        "\n",
+        "!wget -N https://raw.githubusercontent.com/opencv/opencv/master/samples/dnn/face_detector/deploy.prototxt\n",
+        "!wget -N https://raw.githubusercontent.com/opencv/opencv_3rdparty/dnn_samples_face_detector_20170830/res10_300x300_ssd_iter_140000.caffemodel\n",
+        "\n",
+        "print(\"[INFO] loading model...\")\n",
+        "prototxt = 'deploy.prototxt'\n",
+        "model = 'res10_300x300_ssd_iter_140000.caffemodel'\n",
+        "net = cv2.dnn.readNetFromCaffe(prototxt, model)\n",
+        "\n",
+        "if image is None:\n",
+        "    print(f\"[ERROR] Could not read the image from {image_path}\")\n",
+        "else:\n",
+        "    # Resize the image to have a maximum width of 400 pixels\n",
+        "    image = imutils.resize(image, width=400)\n",
+        "    (h, w) = image.shape[:2]\n",
+        "    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))\n",
+        "\n",
+        "    print(\"[INFO] computing object detections...\")\n",
+        "    net.setInput(blob)\n",
+        "    detections = net.forward()\n",
+        "\n",
+        "    for i in range(0, detections.shape[2]):\n",
+        "        # Extract the confidence (i.e., probability) associated with the prediction\n",
+        "        confidence = detections[0, 0, i, 2]\n",
+        "\n",
+        "        # Filter out weak detections by ensuring the confidence is greater than a minimum threshold\n",
+        "        if confidence > 0.5:\n",
+        "            # Compute the (x, y)-coordinates of the bounding box for the object\n",
+        "            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])\n",
+        "            (startX, startY, endX, endY) = box.astype(\"int\")\n",
+        "\n",
+        "            # Draw the bounding box of the face along with the associated probability\n",
+        "            text = \"{:.2f}%\".format(confidence * 100)\n",
+        "            y = startY - 10 if startY - 10 > 10 else startY + 10\n",
+        "            cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)\n",
+        "            cv2.putText(image, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)\n",
+        "\n",
+        "    # Display the output image with detections\n",
+        "    cv2_imshow(image)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "gJITs5LLHZMd",
+        "outputId": "bafa43eb-b701-4898-a6da-f6d5f1a46f08"
+      },
+      "execution_count": 12,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "--2024-08-02 23:41:46--  https://raw.githubusercontent.com/opencv/opencv/master/samples/dnn/face_detector/deploy.prototxt\n",
+            "Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.108.133, 185.199.110.133, 185.199.109.133, ...\n",
+            "Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.108.133|:443... connected.\n",
+            "HTTP request sent, awaiting response... 200 OK\n",
+            "Length: 28104 (27K) [text/plain]\n",
+            "Saving to: ‘deploy.prototxt’\n",
+            "\n",
+            "\rdeploy.prototxt       0%[                    ]       0  --.-KB/s               \rdeploy.prototxt     100%[===================>]  27.45K  --.-KB/s    in 0.002s  \n",
+            "\n",
+            "Last-modified header missing -- time-stamps turned off.\n",
+            "2024-08-02 23:41:46 (16.2 MB/s) - ‘deploy.prototxt’ saved [28104/28104]\n",
+            "\n",
+            "--2024-08-02 23:41:46--  https://raw.githubusercontent.com/opencv/opencv_3rdparty/dnn_samples_face_detector_20170830/res10_300x300_ssd_iter_140000.caffemodel\n",
+            "Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.108.133, 185.199.109.133, 185.199.110.133, ...\n",
+            "Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.108.133|:443... connected.\n",
+            "HTTP request sent, awaiting response... 200 OK\n",
+            "Length: 10666211 (10M) [application/octet-stream]\n",
+            "Saving to: ‘res10_300x300_ssd_iter_140000.caffemodel’\n",
+            "\n",
+            "res10_300x300_ssd_i 100%[===================>]  10.17M  --.-KB/s    in 0.1s    \n",
+            "\n",
+            "Last-modified header missing -- time-stamps turned off.\n",
+            "2024-08-02 23:41:47 (96.5 MB/s) - ‘res10_300x300_ssd_iter_140000.caffemodel’ saved [10666211/10666211]\n",
+            "\n",
+            "[INFO] loading model...\n",
+            "[ERROR] Could not read the image from /content/res10_300x300_ssd_iter_140000.caffemodel\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "lxii8ZyKJRBy"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
